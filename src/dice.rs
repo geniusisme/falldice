@@ -1,5 +1,4 @@
 use common::*;
-use cartesian_fold::IterExt;
 use outcome;
 
 outcome! {
@@ -17,18 +16,6 @@ outcome! {
   Miss,
 }
 
-pub fn outcomes(dice: &[Type]) -> impl Iterator<Item = Outcome> + '_ {
-  dice
-    .iter()
-    .map(|&die| { RollFace::die_faces(die).iter() })
-    .cartesian_collections(|iter| {
-      iter.fold(Outcome::new(), |mut acc, face| {
-        face.add_score(&mut acc);
-        acc
-      })
-    })
-}
-
 #[derive(Copy, Clone)]
 pub enum Type {
   White,
@@ -42,7 +29,7 @@ pub enum Type {
 pub use self::Type::*;
 
 #[derive(Copy, Clone)]
-enum Face {
+pub enum Face {
   Skill2,
   Skill3,
   Skill4,
@@ -78,15 +65,15 @@ enum Face {
 
 use self::Face::*;
 
-struct RollFace {
-  die: Type,
-  face: Face,
-  probability: Real,
+pub struct RollFace {
+  pub die: Type,
+  pub face: Face,
+  pub probability: Real,
 }
 
 impl RollFace {
 
-  fn add_score(&self, outcome: &mut ::dice::Outcome) {
+  pub fn add_score(&self, outcome: &mut ::dice::Outcome) {
     outcome.probability *= self.probability;
     match self.face {
       Skill2 => outcome.scores[Facet::Skill] += 2,
@@ -132,7 +119,7 @@ impl RollFace {
     }
   }
 
-  fn die_faces(die: Type) -> &'static [RollFace] {
+  pub fn die_faces(die: Type) -> &'static [RollFace] {
     static d12: Real = 1.0 / 12.0;
     static d20: Real = 1.0 / 20.0;
     match die {

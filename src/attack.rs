@@ -1,4 +1,5 @@
 use common::*;
+use cartesian_fold::IterExt;
 use outcome;
 
 outcome! {
@@ -21,13 +22,22 @@ pub struct Disposition<'a> {
 
 impl<'a> Disposition<'a> {
   pub fn average_scores(&self) -> self::Scores {
-    dice::outcomes(&self.dice).fold(Scores::default(), |mut acc, next| {
-      let roll_result = self.attack_scores(next.scores);
-      update(&mut acc, &roll_result, |sum, part| {
-        *sum += *part * next.probability;
-      });
-      acc
-    })
+    self.dice
+      .iter()
+      .map(|&die| { dice::RollFace::die_faces(die).iter() })
+      .cartesian_collections(|iter| {
+        iter.fold(dice::Outcome::new(), |mut acc, face| {
+          face.add_score(&mut acc);
+          acc
+        })
+      })
+      .fold(Scores::default(), |mut acc, next| {
+        let roll_result = self.attack_scores(next.scores);
+        update(&mut acc, &roll_result, |sum, part| {
+          *sum += *part * next.probability;
+        });
+        acc
+      })
   }
 
   fn attack_scores(&self, roll: dice::Scores) -> Scores {
