@@ -3,128 +3,210 @@ use cartesian_fold::IterExt;
 use outcome;
 
 outcome! {
-    Score,
-    Damage,
-    Shred,
-    Skill,
-    Bottle,
-    Star,
-    Explosion,
-    BlackBlank,
-    GreenBlank,
-    YellowBlank,
-    Armor,
-    Crit,
-    Action,
-    Hit,
-    Miss,
+  Score,
+  Damage,
+  Shred,
+  Skill,
+  Bottle,
+  Star,
+  Explosion,
+  Armor,
+  Crit,
+  Action,
+  Hit,
+  Miss,
 }
 
-pub enum Die {
-    White,
-    Red,
-    Yellow,
-    Green,
-    Black,
-    Blue,
+pub fn outcomes(dice: &[Type]) -> impl Iterator<Item = Outcome> + '_ {
+  dice
+    .iter()
+    .map(|&die| { RollFace::die_faces(die).iter() })
+    .cartesian_collections(|iter| {
+      iter.fold(Outcome::new(), |mut acc, face| {
+        face.add_score(&mut acc);
+        acc
+      })
+    })
 }
 
-pub use Die::*;
-
-pub fn outcomes(dice: &[Die]) -> impl Iterator<Item=Outcome> + '_ {
-    dice.iter()
-        .map(|die| match die {
-            White => white,
-            Red => red,
-            Yellow => yellow,
-            Green => green,
-            Black => black,
-            Blue => blue,
-        }.iter())
-        .cartesian_collections(|iter|
-            iter.fold(Outcome::new(), |mut acc, face| {
-                acc.probability *= face.0;
-                face.1.iter().fold(acc, |mut acc, score| {
-                    acc.scores[score.0] += score.1;
-                    acc
-                })
-            })
-        )
-
+#[derive(Copy, Clone)]
+pub enum Type {
+  White,
+  Red,
+  Green,
+  Yellow,
+  Black,
+  Blue,
 }
 
-pub type Face = &'static [(Facet, Score)];
+pub use self::Type::*;
 
-pub type DieDesc = &'static [(Real, Face)];
-
-macro_rules! make_die {
-
-    [$faces_cnt:literal, $($faces:literal =>  $($desc:expr), +;) +] => {
-        &[$(($faces as Real / $faces_cnt as Real, &[$($desc), +])), +]
-    };
+#[derive(Copy, Clone)]
+enum Face {
+  Skill2,
+  Skill3,
+  Skill4,
+  Skill5,
+  Skill6,
+  Skill7,
+  Skill8,
+  Skill9,
+  Skill10,
+  SkillMinus1,
+  SkillMinus2,
+  SkillMinus3,
+  Blank,
+  Damage1,
+  Damage2,
+  Shred1,
+  Shred2,
+  Bottle1,
+  Bottle2,
+  Star1,
+  Star2,
+  BottleStar,
+  Explosion1,
+  Crit1,
+  Action1,
+  Miss1,
+  MissAction,
+  Armor1,
+  Armor2,
+  Armor3,
+  Armor4,
 }
 
-pub const white: DieDesc = make_die![
-    20,
-    2 => (Action, 1), (Hit, 1);
-    3 => (Crit, 1), (Hit, 1);
-    1 => (Skill, 2);
-    1 => (Skill, 3);
-    1 => (Skill, 4);
-    1 => (Skill, 5);
-    2 => (Skill, 6);
-    2 => (Skill, 7);
-    2 => (Skill, 8);
-    1 => (Skill, 9);
-    1 => (Skill, 10);
-    2 => (Miss, 1);
-    1 => (Miss, 1), (Action, 1);
-];
+use self::Face::*;
 
-pub const red: DieDesc = make_die![
-    12,
-    4 => (Armor, 1);
-    3 => (Armor, 2);
-    3 => (Armor, 3);
-    2 => (Armor, 4);
-];
+struct RollFace {
+  die: Type,
+  face: Face,
+  probability: Real,
+}
 
-pub const black: DieDesc = make_die![
-    12,
-    5 =>  (Damage, 1);
-    1 =>  (Damage, 2);
-    3 =>  (BlackBlank, 1);
-    1 =>  (Bottle, 1);
-    1 =>  (Shred, 1);
-    1 =>  (Skill, -1);
-];
+impl RollFace {
 
-pub const green: DieDesc = make_die![
-    12,
-    4 =>  (Skill, -2), (GreenBlank, 1);
-    2 =>  (Skill, -2);
-    1 =>  (Skill, -3);
-    2 =>  (Shred, 1);
-    2 =>  (Damage, 1);
-    1 =>  (Bottle, 1);
-];
+  fn add_score(&self, outcome: &mut ::dice::Outcome) {
+    outcome.probability *= self.probability;
+    match self.face {
+      Skill2 => outcome.scores[Facet::Skill] += 2,
+      Skill3 => outcome.scores[Facet::Skill] += 3,
+      Skill4 => outcome.scores[Facet::Skill] += 4,
+      Skill5 => outcome.scores[Facet::Skill] += 5,
+      Skill6 => outcome.scores[Facet::Skill] += 6,
+      Skill7 => outcome.scores[Facet::Skill] += 7,
+      Skill8 => outcome.scores[Facet::Skill] += 8,
+      Skill9 => outcome.scores[Facet::Skill] += 9,
+      Skill10 => outcome.scores[Facet::Skill] += 10,
+      SkillMinus1 => outcome.scores[Facet::Skill] -= 1,
+      SkillMinus2 => outcome.scores[Facet::Skill] -= 2,
+      SkillMinus3 => outcome.scores[Facet::Skill] -= 3,
+      Blank => match self.die {
+        Green => outcome.scores[Facet::Skill] -= 2,
+        _ => (),
+      },
+      Damage1 => outcome.scores[Facet::Damage] += 1,
+      Damage2 => outcome.scores[Facet::Damage] += 2,
+      Shred1 => outcome.scores[Facet::Shred] += 1,
+      Shred2 => outcome.scores[Facet::Shred] += 2,
+      Bottle1 => outcome.scores[Facet::Bottle] += 1,
+      Bottle2 => outcome.scores[Facet::Bottle] += 2,
+      Star1 => outcome.scores[Facet::Star] += 1,
+      Star2 => outcome.scores[Facet::Star] += 2,
+      BottleStar => {
+        outcome.scores[Facet::Bottle] += 1;
+        outcome.scores[Facet::Star] += 1;
+      },
+      Explosion1 => outcome.scores[Facet::Explosion] += 1,
+      Crit1 => outcome.scores[Facet::Crit] += 1,
+      Action1 => outcome.scores[Facet::Action] += 1,
+      Miss1 => outcome.scores[Facet::Miss] = 1,
+      MissAction => {
+        outcome.scores[Facet::Action] += 1;
+        outcome.scores[Facet::Miss] = 1;
+      }
+      Armor1 => outcome.scores[Facet::Armor] += 1,
+      Armor2 => outcome.scores[Facet::Armor] += 2,
+      Armor3 => outcome.scores[Facet::Armor] += 3,
+      Armor4 => outcome.scores[Facet::Armor] += 4,
+    }
+  }
 
-pub const yellow: DieDesc = make_die![
-    12,
-    5 =>  (Shred, 1);
-    1 =>  (Shred, 2);
-    2 =>  (YellowBlank, 1);
-    1 =>  (Bottle, 1);
-    2 =>  (Skill, -1);
-    1 =>  (Damage, 1);
-];
-
-pub const blue: DieDesc = make_die![
-    12,
-    4 =>  (Bottle, 1);
-    2 =>  (Bottle, 2);
-    1 =>  (Bottle, 1), (Star, 1);
-    2 =>  (Star, 1);
-    1 =>  (Star, 2);
-    2 =>  (Explosion, 1);
-];
+  fn die_faces(die: Type) -> &'static [RollFace] {
+    static d12: Real = 1.0 / 12.0;
+    static d20: Real = 1.0 / 20.0;
+    match die {
+      White => {
+        static ret: &'static [RollFace] = &[
+          RollFace { die: White, face: Action1, probability: 2.0 * d20 },
+          RollFace { die: White, face: Crit1, probability: 3.0 * d20 },
+          RollFace { die: White, face: Skill2, probability: 1.0 * d20 },
+          RollFace { die: White, face: Skill3, probability: 1.0 * d20 },
+          RollFace { die: White, face: Skill4, probability: 1.0 * d20 },
+          RollFace { die: White, face: Skill5, probability: 1.0 * d20 },
+          RollFace { die: White, face: Skill6, probability: 2.0 * d20 },
+          RollFace { die: White, face: Skill7, probability: 2.0 * d20 },
+          RollFace { die: White, face: Skill8, probability: 2.0 * d20 },
+          RollFace { die: White, face: Skill9, probability: 1.0 * d20 },
+          RollFace { die: White, face: Skill10, probability: 1.0 * d20 },
+          RollFace { die: White, face: Miss1, probability: 2.0 * d20 },
+          RollFace { die: White, face: MissAction, probability: 1.0 * d20 },
+        ];
+        ret
+      },
+      Red => {
+        static ret: &'static [RollFace] = &[
+          RollFace { die: Red, face: Armor1, probability: 4.0 * d12 },
+          RollFace { die: Red, face: Armor2, probability: 3.0 * d12 },
+          RollFace { die: Red, face: Armor3, probability: 3.0 * d12 },
+          RollFace { die: Red, face: Armor4, probability: 2.0 * d12 },
+        ];
+        ret
+      },
+      Black => {
+        static ret: &'static [RollFace] = &[
+          RollFace { die: Black, face: Damage1, probability: 5.0 * d12 },
+          RollFace { die: Black, face: Damage2, probability: 1.0 * d12 },
+          RollFace { die: Black, face: Blank, probability: 3.0 * d12 },
+          RollFace { die: Black, face: Bottle1, probability: 1.0 * d12 },
+          RollFace { die: Black, face: Shred1, probability: 1.0 * d12 },
+          RollFace { die: Black, face: SkillMinus1, probability: 1.0 * d12 },
+        ];
+        ret
+      },
+      Green => {
+        static ret: &'static [RollFace] = &[
+          RollFace { die: Green, face: Blank, probability: 4.0 * d12 },
+          RollFace { die: Green, face: SkillMinus2, probability: 2.0 * d12 },
+          RollFace { die: Green, face: SkillMinus3, probability: 1.0 * d12 },
+          RollFace { die: Green, face: Shred1, probability: 2.0 * d12 },
+          RollFace { die: Green, face: Damage1, probability: 2.0 * d12 },
+          RollFace { die: Green, face: Bottle1, probability: 1.0 * d12 },
+        ];
+        ret
+      },
+      Yellow => {
+        static ret: &'static [RollFace] = &[
+          RollFace { die: Yellow, face: Shred1, probability: 5.0 * d12 },
+          RollFace { die: Yellow, face: Shred2, probability: 1.0 * d12 },
+          RollFace { die: Yellow, face: Blank, probability: 2.0 * d12 },
+          RollFace { die: Yellow, face: Bottle1, probability: 1.0 * d12 },
+          RollFace { die: Yellow, face: SkillMinus1, probability: 2.0 * d12 },
+          RollFace { die: Yellow, face: Damage1, probability: 1.0 * d12 },
+        ];
+        ret
+      },
+      Blue => {
+        static ret: &'static [RollFace] = &[
+          RollFace { die: Blue, face: Bottle1, probability: 4.0 * d12 },
+          RollFace { die: Blue, face: Bottle2, probability: 2.0 * d12 },
+          RollFace { die: Blue, face: BottleStar, probability: 1.0 * d12 },
+          RollFace { die: Blue, face: Star1, probability: 2.0 * d12 },
+          RollFace { die: Blue, face: Star2, probability: 1.0 * d12 },
+          RollFace { die: Blue, face: Explosion1, probability: 2.0 * d12 },
+        ];
+        ret
+      }
+    }
+  }
+}

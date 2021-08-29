@@ -14,7 +14,7 @@ use dice;
 
 #[derive(Default)]
 pub struct Disposition<'a> {
-    pub dice: Vec<dice::Die>,
+    pub dice: Vec<dice::Type>,
     pub characteristics: Characteristics,
     pub effects: Vec<&'a dyn Effect>,
 }
