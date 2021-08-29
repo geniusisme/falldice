@@ -1,0 +1,7 @@
+[package]
+name = "falldice"
+version = "0.1.0"
+authors = ["eugeen"]
+
+[dependencies]
+enum-map = "1.1.1"
