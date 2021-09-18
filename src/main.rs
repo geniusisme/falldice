@@ -22,6 +22,8 @@ mod common {
 use common::*;
 
 fn main() {
+  #![allow(unused)]
+
   let damage_on_bottle = &effects::ExchangeScoreOnHit {
     give: (dice::Bottle, 1.try_into().unwrap()),
     take: (dice::Damage, 1.try_into().unwrap()),
@@ -51,7 +53,7 @@ fn main() {
         dice::Green,
         dice::Black,
         dice::Yellow,
-        dice::Yellow
+        dice::Yellow,
       ],
       characteristics: attack::Characteristics {
         base_score: new_scores(&[
@@ -67,7 +69,7 @@ fn main() {
     }
     .average_scores()
   );
-
+  let db = &effects::RerollBlackBlank{};
   println!(
     "sniper: {:?}",
     attack::Disposition {
@@ -89,7 +91,7 @@ fn main() {
   );
 
   println!(
-    "result: {:?}",
+    "big guy: {:?}",
     attack::Disposition {
       dice: vec![
         dice::Red,
@@ -109,6 +111,7 @@ fn main() {
         soft_armor: 2,
         hard_armor: 1,
       },
+      effects: vec![db],
       ..Default::default()
     }
     .average_scores()
@@ -124,7 +127,7 @@ fn main() {
         dice::Black,
         dice::Yellow,
         dice::Green,
-        dice::Green
+        dice::Green,
       ],
       characteristics: attack::Characteristics {
         base_score: new_scores(&[

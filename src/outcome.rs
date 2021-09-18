@@ -36,6 +36,12 @@ pub fn update(what: &mut Scores, with: &Scores, f: impl Fn(&mut $Score, &$Score)
     });
 }
 
+impl Default for Outcome {
+    fn default() -> Self {
+        Outcome { probability: 1.0, scores: Default::default() }
+    }
+}
+
 //////////////////////////////////////////
 
     };

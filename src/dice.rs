@@ -16,7 +16,7 @@ outcome! {
   Miss,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Type {
   White,
   Red,
@@ -28,7 +28,7 @@ pub enum Type {
 
 pub use self::Type::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Face {
   Skill2,
   Skill3,
@@ -63,8 +63,9 @@ pub enum Face {
   Armor4,
 }
 
-use self::Face::*;
+pub use self::Face::*;
 
+#[derive(Clone, Copy)]
 pub struct RollFace {
   pub die: Type,
   pub face: Face,
@@ -105,8 +106,14 @@ impl RollFace {
         outcome.scores[Facet::Star] += 1;
       },
       Explosion1 => outcome.scores[Facet::Explosion] += 1,
-      Crit1 => outcome.scores[Facet::Crit] += 1,
-      Action1 => outcome.scores[Facet::Action] += 1,
+      Crit1 => {
+        outcome.scores[Facet::Crit] += 1;
+        outcome.scores[Facet::Hit] += 1;
+      }
+      Action1 => {
+        outcome.scores[Facet::Action] += 1;
+        outcome.scores[Facet::Skill] += 1;
+      }
       Miss1 => outcome.scores[Facet::Miss] = 1,
       MissAction => {
         outcome.scores[Facet::Action] += 1;
@@ -119,7 +126,7 @@ impl RollFace {
     }
   }
 
-  pub fn die_faces(die: Type) -> &'static [RollFace] {
+  pub fn faces_of(die: Type) -> &'static [RollFace] {
     static d12: Real = 1.0 / 12.0;
     static d20: Real = 1.0 / 20.0;
     match die {

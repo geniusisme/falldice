@@ -3,14 +3,14 @@ where
   I: Iterator,
 {
   /// as itertools' multiple_cartesian_product, but instead of returning
-  /// newly allocated vec each iterations, takes lambda which takes iterator of
+  /// newly allocated vec each iterations, takes lambda which takes slice of
   /// items in current element of cartesian product.
-  /// It is like doing .map(|vec| vec.iter()) on result of multiple_cartesian_product,
+  /// It is like doing .map(|vec| &vec) on result of multiple_cartesian_product,
   /// but wihout extra allocation
   fn cartesian_collections<F, R>(self, f: F) -> CartesianProductCollections<I, F>
   where
     Self::Item: Iterator + Clone,
-    F: Fn(std::slice::Iter<'_, <<Self as Iterator>::Item as Iterator>::Item>) -> R,
+    F: Fn(&'_ [<<Self as Iterator>::Item as Iterator>::Item]) -> R,
   {
     CartesianProductCollections::<I, F>::new(self, f)
   }
@@ -42,7 +42,7 @@ impl<I, F, R> Iterator for CartesianProductCollections<I, F>
 where
   I: Iterator,
   I::Item: Iterator + Clone,
-  F: Fn(std::slice::Iter<'_, <I::Item as Iterator>::Item>) -> R,
+  F: Fn(&'_ [<<I as Iterator>::Item as Iterator>::Item]) -> R,
 {
   type Item = R;
 
@@ -88,7 +88,7 @@ where
       Items::Empty => Items::Empty,
     };
     match self.items {
-      Items::Evaluated(ref items) => Some((self.f)(items.current_items.iter())),
+      Items::Evaluated(ref items) => Some((self.f)(&items.current_items)),
       Items::Empty => None,
       _ => unreachable!(),
     }
@@ -115,7 +115,7 @@ pub trait IterExt: Iterator + Sized {
   fn cartesian_collections<F, R>(self, f: F) -> CartesianProductCollections<Self, F>
   where
     Self::Item: Iterator + Clone,
-    F: Fn(std::slice::Iter<'_, <<Self as Iterator>::Item as Iterator>::Item>) -> R;
+    F: Fn(&'_ [<<Self as Iterator>::Item as Iterator>::Item]) -> R;
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn numbers_from_digits() {
   assert_eq!(
     (0..3)
       .map(|i| i..(i + 2))
-      .cartesian_collections(|iter| { iter.fold(0, |pr, next| pr * 10 + *next) })
+      .cartesian_collections(|slice| { slice.iter().fold(0, |pr, next| pr * 10 + *next) })
       .collect::<Vec<_>>(),
     vec![12, 112, 22, 122, 13, 113, 23, 123],
   );
@@ -136,7 +136,7 @@ fn if_one_iter_is_empty_result_is_empty() {
     numbers
       .iter()
       .map(|vec| vec.iter())
-      .cartesian_collections(|iter| iter.fold(0, |_, _| 0))
+      .cartesian_collections(|slice| slice.iter().fold(0, |_, _| 0))
       .next(),
     None,
   )
