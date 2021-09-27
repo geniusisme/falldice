@@ -42,6 +42,16 @@ fn main() {
     times: None,
   };
 
+  let ignore_armor_on_bottles = &effects::IgnoreArmorOnBottles{};
+
+  let rbb = &effects::RerollBlackBlank{};
+  let rab = &effects::RerollAnyBlank{};
+
+  let hit_luck = &effects::LuckForHit{};
+  let miss_luck = &effects::LuckForMiss{};
+  let armor_luck = &effects::LuckForArmor{};
+  let crit_luck = &effects::LuckForCrit{};
+
   println!(
     "result: {:?}",
     attack::Disposition {
@@ -69,7 +79,7 @@ fn main() {
     }
     .average_scores()
   );
-  let db = &effects::RerollBlackBlank{};
+
   println!(
     "sniper: {:?}",
     attack::Disposition {
@@ -111,7 +121,7 @@ fn main() {
         soft_armor: 2,
         hard_armor: 1,
       },
-      effects: vec![db],
+      effects: vec![rbb, rab, hit_luck, miss_luck, ignore_armor_on_bottles, armor_luck, crit_luck],
       ..Default::default()
     }
     .average_scores()

@@ -95,12 +95,16 @@ impl<'a> Case<'a> {
     self.scores = scores;
   }
 
-  pub fn result(&mut self, facet: Facet) -> Real {
+  pub fn result(&self, facet: Facet) -> Real {
     self.scores[facet]
   }
 
   pub fn score(&self, facet: dice::Facet) -> Score {
     self.dice_outcome.scores[facet] + self.characteristics.base_score[facet]
+  }
+
+  pub fn characteristics(&self) -> &Characteristics {
+    &self.characteristics
   }
 
   pub fn roll(&self) -> &[dice::RollFace] {
