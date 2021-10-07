@@ -2,9 +2,7 @@
 
 extern crate enum_map;
 
-use std::iter::Iterator;
 use std::convert::TryInto;
-use dice::{Facet, Scores};
 
 mod attack;
 mod cartesian_fold;
@@ -18,8 +16,6 @@ mod common {
   pub type Score = i8;
   pub type PositiveScore = std::num::NonZeroI8;
 }
-
-use common::*;
 
 fn main() {
   #![allow(unused)]
@@ -53,28 +49,23 @@ fn main() {
   let crit_luck = &effects::LuckForCrit{};
 
   println!(
-    "result: {:?}",
+    "cowboy: {:?}",
     attack::Disposition {
       dice: vec![
         dice::Red,
         dice::White,
         dice::Black,
         dice::Black,
-        dice::Green,
-        dice::Black,
-        dice::Yellow,
-        dice::Yellow,
       ],
       characteristics: attack::Characteristics {
-        base_score: new_scores(&[
-          (dice::Damage, 3),
-          //(dice::Shred, 1),
+        base_score: dice::new_scores(&[
+          (dice::Damage, 1),
         ]),
-        required_skill: 9,
-        soft_armor: 4,
+        required_skill: 6,
+        soft_armor: 2,
         hard_armor: 0,
       },
-      //effects: vec![&damage_on_bottle],
+      effects: vec![],
       ..Default::default()
     }
     .average_scores()
@@ -85,9 +76,8 @@ fn main() {
     attack::Disposition {
       dice: vec![dice::Red, dice::White, dice::Green, dice::Green, dice::Blue],
       characteristics: attack::Characteristics {
-        base_score: new_scores(&[
+        base_score: dice::new_scores(&[
           (dice::Damage, 2),
-          //(dice::Shred, 1),
         ]),
         required_skill: 9,
         soft_armor: 5,
@@ -113,9 +103,8 @@ fn main() {
         dice::Green
       ],
       characteristics: attack::Characteristics {
-        base_score: new_scores(&[
+        base_score: dice::new_scores(&[
           (dice::Damage, 1),
-          //(dice::Shred, 1),
         ]),
         required_skill: 9,
         soft_armor: 2,
@@ -140,9 +129,8 @@ fn main() {
         dice::Green,
       ],
       characteristics: attack::Characteristics {
-        base_score: new_scores(&[
+        base_score: dice::new_scores(&[
           (dice::Damage, 1),
-          //(dice::Shred, 1),
         ]),
         required_skill: 7,
         soft_armor: 2,
@@ -152,10 +140,4 @@ fn main() {
     }
     .average_scores()
   );
-}
-
-fn new_scores(facets: &[(Facet, Score)]) -> Scores {
-  let mut res = Scores::default();
-  res.extend(facets.into_iter().cloned());
-  res
 }

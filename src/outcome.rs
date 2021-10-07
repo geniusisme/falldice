@@ -1,6 +1,3 @@
-//use common::*;
-//use enum_map as em;
-
 #[macro_export]
 macro_rules! outcome {
     ($Score:ty, $($variant:ident,)+) => {
@@ -16,6 +13,13 @@ pub enum Facet {
 pub use self::Facet::*;
 
 pub type Scores = enum_map::EnumMap<self::Facet, $Score>;
+
+#[allow(unused)]
+pub fn new_scores(facets: &[(Facet, $Score)]) -> Scores {
+  let mut res = Scores::default();
+  res.extend(facets.into_iter().cloned());
+  res
+}
 
 #[derive(Clone)]
 pub struct Outcome {
