@@ -1,0 +1,2 @@
+This repo helps to compute probabilities of various oucomes of dice rolls in the Follout: Wasteland Warfare miniature game.
+It supports rolling of all colored dice and their mechanics. Also it supports usage of luck and several special weapon effects. Effects system is designed to be extensible.
