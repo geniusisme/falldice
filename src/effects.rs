@@ -216,6 +216,7 @@ fn near_miss(case: &attack::Case, amount: Score) -> bool {
 mod test {
   use effects::*;
   use attack;
+  use std::convert::TryInto;
 
   #[test]
   fn ignore_one_armor_on_bottle() {
@@ -233,5 +234,133 @@ mod test {
     let outcome = disposition.average_scores();
 
     assert_eq!((outcome[attack::Damage] * 144.0).round() as i64, 124);
+  }
+
+  #[test]
+  fn deal_one_damage_on_bottle() {
+    let effect = &ExchangeScoreOnHit{
+      give: (dice::Bottle, 1.try_into().unwrap()),
+      take: (dice::Damage, 1.try_into().unwrap()),
+      times: Some(1.try_into().unwrap()),
+    };
+    let disposition = attack::Disposition {
+      dice: vec![dice::Blue],
+      characteristics: attack::Characteristics {
+        base_score: dice::new_scores(&[(dice::Hit, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Damage] * 12.0).round() as i64, 7);
+  }
+
+  #[test]
+  fn reroll_black_statistics() {
+    let effect = &RerollBlackBlank{};
+    let disposition = attack::Disposition {
+      dice: vec![dice::Black],
+      characteristics: attack::Characteristics {
+        base_score: dice::new_scores(&[(dice::Hit, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Damage] * 144.0).round() as i64, 7 * 3 + 7 * 12);
+  }
+
+  #[test]
+  fn reroll_green_as_any_statistics() {
+    let effect = &RerollAnyBlank{};
+    let disposition = attack::Disposition {
+      dice: vec![dice::Green, dice::White],
+      characteristics: attack::Characteristics {
+        required_skill: 6,
+        base_score: dice::new_scores(&[(dice::Damage, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Damage] * 144.0 * 20.0).round() as i64, 4 * 7 * 12 + 4 + 12 + 11 * (2 * 12 * 2 + 4 * (2 * 2 + 10) + 6 * 12));
+  }
+
+  #[test]
+  fn luck_for_hit_statistics() {
+    let effect = &LuckForHit{};
+    let disposition = attack::Disposition {
+      dice: vec![dice::White],
+      characteristics: attack::Characteristics {
+        required_skill: 6,
+        base_score: dice::new_scores(&[(dice::Damage, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Damage] * 20.0).round() as i64, 13);
+  }
+
+  #[test]
+  fn luck_for_miss_statistics() {
+    let effect = &LuckForMiss{};
+    let disposition = attack::Disposition {
+      dice: vec![dice::White],
+      characteristics: attack::Characteristics {
+        required_skill: 6,
+        base_score: dice::new_scores(&[(dice::Damage, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Damage] * 40.0).round() as i64, 19);
+  }
+
+  #[test]
+  fn luck_for_armor_statistics() {
+    let effect = &LuckForArmor{};
+    let disposition = attack::Disposition {
+      dice: vec![dice::White],
+      characteristics: attack::Characteristics {
+        required_skill: 6,
+        base_score: dice::new_scores(&[(dice::Damage, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Damage] * 40.0).round() as i64, 11);
+  }
+
+  #[test]
+  fn luck_for_crit_statistics() {
+    let effect = &LuckForCrit{};
+    let disposition = attack::Disposition {
+      dice: vec![dice::White],
+      characteristics: attack::Characteristics {
+        required_skill: 6,
+        base_score: dice::new_scores(&[(dice::Damage, 1)]),
+        ..Default::default()
+      },
+      effects: vec![effect],
+      ..Default::default()
+    };
+    let outcome = disposition.average_scores();
+
+    assert_eq!((outcome[attack::Crits] * 40.0).round() as i64, 17);
   }
 }
